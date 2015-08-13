@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        html, body {height: 100%; margin:0px !important;}
+        #header{
+            position: fixed;
+            top: 0;
+            height: 50px;
+            width: 100%;
+            background-color: #000;
+            z-index: 1;
+        }
+        #map{
+            padding-top: 50px;
+            padding-bottom: 50px;
+            background-color:#fff;
+            position: fixed;
+            top:0px;
+            bottom:0px;
+            width:100%;
+            height: 100%;
+        }
+        #footer{
+            background-color: #fff;
+            position: fixed;
+            bottom: 0;
+            height: 50px;
+            width: 100%;
+            z-index: 1;
+        }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js"></script>
+    <script>
+        var dataScriptURL = 'https://script.google.com/macros/s/AKfycbycGTzilI4uyw_zFn0dn4qyfmDfNFkBTFxKLPhLXuRy7marCZs/exec'
+        if(window.location.hash) {
+            // dummy source spreadsheet
+            var sourceSheetID = '1_fFwffawJJ4Kz2cPlY9sZe8gHVTU8N97lRz6ylZy7gk'
+        } else {
+            // live source spreadsheet
+            var sourceSheetID = ''
+        }
+        var map = null
+
+        function initialize() {
+            var mapCanvas = document.getElementById('map');
+            var mapOptions = {
+                center: new google.maps.LatLng(51.4604107,-0.1166048),
+                zoom: 16,
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            }
+            map = new google.maps.Map(mapCanvas, mapOptions);
+            setStyles()
+            loadPoints();
+        }
+        function setStyles() {
+            map.set('styles', [
+                {
+                    featureType: 'road',
+                    elementType: 'labels',
+                    stylers: [
+                        { visibility: 'simplified' },
+                        { color: '#000000' }
+                    ]
+                },
+                {
+                    featureType: 'road',
+                    elementType: 'geometry',
+                    stylers: [
+                        { color: '#000000' },
+                        { weight: 0.1 }
+                    ]
+                },
+                {
+                    featureType: 'road.arterial',
+                    elementType: 'geometry.fill',
+                    stylers: [
+                        { visibility: 'off' }
+                    ]
+                },
+                {
+                    featureType: 'road.highway',
+                    elementType: 'geometry.fill',
+                    stylers: [
+                        { visibility: 'off' }
+                    ]
+                },
+                {
+                    featureType: 'road.local',
+                    elementType: 'geometry',
+                    stylers: [
+                        { color: '#28ABE3' },
+                        { weight: 0.2 }
+                    ]
+                },
+                {
+                    featureType: 'landscape',
+                    elementType: 'geometry',
+                    stylers: [
+                        { hue: '#ffff00' },
+                        { gamma: 1.4 },
+                        { saturation: 82 },
+                        { lightness: 96 }
+                    ]
+                },
+                {
+                    featureType: 'landscape',
+                    elementType: 'labels',
+                    stylers: [
+                        { visibility: 'off' }
+                    ]
+                },
+                {
+                    featureType: 'transit.line',
+                    elementType: 'all',
+                    stylers: [
+                        { visibility: 'off' }
+                    ]
+                },
+                {
+                    featureType: 'transit.station',
+                    elementType: 'all',
+                    stylers: [
+                        { visibility: 'simplified' }
+                    ]
+                },
+                {
+                    featureType: 'poi',
+                    elementType: 'all',
+                    stylers: [
+                        { visibility: 'off' }
+                    ]
+                }
+            ]);
+        }
+        function loadPoints() {
+            var fullURL = dataScriptURL + '?sn=Sheet1&dr=points&s=' + sourceSheetID
+            $.ajax({
+                type: 'GET',
+                url: fullURL,
+                async: false,
+                jsonp: 'cb',
+                contentType: "application/json",
+                dataType: 'jsonp',
+                success: function(json) {
+                    $.each(json.data, function(key, val) {
+                        var contentImage = '';
+                        var contentDesc = '<p>';
+                        var contentUrl = '';
+                        if (val.imgUrl != "") {
+                            contentImage = '<div id="img" style="height:100px; width:100px">'+
+                                '<img src="' + val.imgUrl + '" style="max-width:100%;max-height:100%">'+
+                                '</div>';
+                        }
+                        if (val.line1 != "") {
+                            contentDesc += val.line1 + '<br>'
+                        }
+                        if (val.line2 != "") {
+                            contentDesc += val.line2 + '<br>'
+                        }
+                        if (val.line3 != "") {
+                            contentDesc += val.line3 + '<br>'
+                        }
+                        if (val.line4 != "") {
+                            contentDesc += val.line4 + '<br>'
+                        }
+                        if (val.line5 != "") {
+                            contentDesc += val.line5 + '<br>'
+                        }
+                        if (val.line6 != "") {
+                            contentDesc += val.line6 + '<br>'
+                        }
+                        if (val.line7 != "") {
+                            contentDesc += val.line7 + '<br>'
+                        }
+                        if (val.line8 != "") {
+                            contentDesc += val.line8 + '<br>'
+                        }
+                        if (val.line9 != "") {
+                            contentDesc += val.line9 + '<br>'
+                        }
+                        contentDesc += '</p>'
+                        if (val.url != "") {
+                            contentUrl = '<p><a href="' + val.url + '" target="_blank">' + val.url + '</a></p>'
+                        }
+                        var content = '<h1>' + val.title + '</h1>'+
+                            '<div id="bodyContent">'+
+                            contentDesc+
+                            contentImage+
+                            contentUrl+
+                            '</div>';
+                        var pt = new google.maps.LatLng(val.lat, val.lng);
+                        var infoWindow = new google.maps.InfoWindow({
+                            content: content
+                        });
+                        var marker = new google.maps.Marker({
+                            position: pt,
+                            map: map,
+                            title: val.title
+                        });
+                        marker.addListener('click', function() {
+                            infoWindow.open(map, marker);
+                        });
+                    });
+                },
+                error: function(e) {
+                   console.log(e.message);
+                }
+            });
+        }
+        google.maps.event.addDomListener(window, 'load', initialize);
+</script>
+</head>
+<body>
+    <div id="header"></div>
+    <div id="map"></div>
+    <div id="footer"></div>
+</body>
+</html>
