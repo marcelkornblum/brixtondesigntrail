@@ -1,8 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         html, body {height: 100%; margin:0px !important;}
+        p, a {
+            color: #ffffff;
+            font-family: sans-serif;
+        }
+        a {
+            text-decoration: none;
+            border-bottom: 1px dotted #ffffff;
+        }
+        a:hover {
+            border-bottom: none;
+        }
         #header{
             position: fixed;
             top: 0;
@@ -11,15 +23,35 @@
             background-color: #000;
             z-index: 1;
         }
+        #header img {
+            max-height: 40px;
+            margin: 5px 0 0 5px;
+        }
+        #header p {
+            position: fixed;
+            top: 0;
+            right: 20px;
+            font-size: 0.9em;
+        }
         #map{
-            padding-top: 50px;
-            padding-bottom: 50px;
+            margin-top: 50px;
+            margin-bottom: 50px;
             background-color:#fff;
             position: fixed;
             top:0px;
             bottom:0px;
             width:100%;
             height: 100%;
+        }
+        .marker h1 {
+            font-size: 1.6em;
+        }
+        .marker p, .marker a {
+            color: #000000;
+        }
+        .marker img {
+            max-height: 200px;
+            max-width: 100%;
         }
         #footer{
             background-color: #fff;
@@ -28,6 +60,26 @@
             height: 50px;
             width: 100%;
             z-index: 1;
+        }
+        #footer img {
+            max-height: 40px;
+            margin: 5px 0 0 5px;
+        }
+        @media (max-width:600px) {
+          /* Phone */
+            #header{
+                height: 100px;
+            }
+            #header img {
+                max-height: 90px;
+            }
+            #header p {
+                font-size: 1.1em;
+                margin-left: 110px;
+            }
+            #map{
+                margin-top: 100px;
+            }
         }
     </style>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
@@ -41,14 +93,17 @@
             // live source spreadsheet
             var sourceSheetID = ''
         }
-        var map = null
+        var map = null;
+        var points = [];
+        var infos = []
 
         function initialize() {
             var mapCanvas = document.getElementById('map');
             var mapOptions = {
                 center: new google.maps.LatLng(51.4604107,-0.1166048),
                 zoom: 16,
-                mapTypeId: google.maps.MapTypeId.ROADMAP
+                mapTypeId: google.maps.MapTypeId.ROADMAP,
+                disableDefaultUI: true
             }
             map = new google.maps.Map(mapCanvas, mapOptions);
             setStyles()
@@ -58,10 +113,20 @@
             map.set('styles', [
                 {
                     featureType: 'road',
-                    elementType: 'labels',
+                    elementType: 'labels.text.stroke',
                     stylers: [
-                        { visibility: 'simplified' },
-                        { color: '#000000' }
+                        // { visibility: 'simplified' },
+                        { color: '#ffffff' },
+                        { weight: 6 }
+                    ]
+                },
+                {
+                    featureType: 'road',
+                    elementType: 'labels.text.fill',
+                    stylers: [
+                        // { visibility: 'simplified' },
+                        { color: '#000000' },
+                        { weight: 0.1 }
                     ]
                 },
                 {
@@ -135,7 +200,9 @@
             ]);
         }
         function loadPoints() {
-            var fullURL = dataScriptURL + '?sn=Sheet1&dr=points&s=' + sourceSheetID
+            var fullURL = dataScriptURL + '?sn=Sheet1&dr=points&s=' + sourceSheetID;
+            var infoWinHeight = $('#map').height() - 100;
+            var infoWinWidth = $('#map').width() - 50;
             $.ajax({
                 type: 'GET',
                 url: fullURL,
@@ -144,63 +211,59 @@
                 contentType: "application/json",
                 dataType: 'jsonp',
                 success: function(json) {
+                    var bounds = new google.maps.LatLngBounds();
                     $.each(json.data, function(key, val) {
-                        var contentImage = '';
-                        var contentDesc = '<p>';
-                        var contentUrl = '';
+                        var contentImage, contentDesc, contentUrl, contentAddress = '';
                         if (val.imgUrl != "") {
-                            contentImage = '<div id="img" style="height:100px; width:100px">'+
-                                '<img src="' + val.imgUrl + '" style="max-width:100%;max-height:100%">'+
-                                '</div>';
+                            contentImage = '<img src="' + val.imgUrl + '">';
                         }
-                        if (val.line1 != "") {
-                            contentDesc += val.line1 + '<br>'
+                        if (val.description != "") {
+                            contentDesc = '<p>' + val.description + '</p>'
                         }
-                        if (val.line2 != "") {
-                            contentDesc += val.line2 + '<br>'
-                        }
-                        if (val.line3 != "") {
-                            contentDesc += val.line3 + '<br>'
-                        }
-                        if (val.line4 != "") {
-                            contentDesc += val.line4 + '<br>'
-                        }
-                        if (val.line5 != "") {
-                            contentDesc += val.line5 + '<br>'
-                        }
-                        if (val.line6 != "") {
-                            contentDesc += val.line6 + '<br>'
-                        }
-                        if (val.line7 != "") {
-                            contentDesc += val.line7 + '<br>'
-                        }
-                        if (val.line8 != "") {
-                            contentDesc += val.line8 + '<br>'
-                        }
-                        if (val.line9 != "") {
-                            contentDesc += val.line9 + '<br>'
-                        }
-                        contentDesc += '</p>'
                         if (val.url != "") {
                             contentUrl = '<p><a href="' + val.url + '" target="_blank">' + val.url + '</a></p>'
                         }
-                        var content = '<h1>' + val.title + '</h1>'+
-                            '<div id="bodyContent">'+
+                        if (val.address != "") {
+                            contentAddress = '<p>' + val.address + '</p>'
+                        }
+                        var content = '<div class="marker" style="max-height: ' + infoWinHeight + 'px;max-width: ' + infoWinWidth + 'px;">'+
+                            '<h1>' + val.title + '</h1>'+
+                            '<div class="bodyContent">'+
                             contentDesc+
                             contentImage+
                             contentUrl+
-                            '</div>';
+                            contentAddress+
+                            '</div></div>';
                         var pt = new google.maps.LatLng(val.lat, val.lng);
                         var infoWindow = new google.maps.InfoWindow({
                             content: content
                         });
+                        var image ={
+                            url: 'images/marker.png',
+                            size: new google.maps.Size(23, 43),
+                            origin: new google.maps.Point(0, 0),
+                            anchor: new google.maps.Point(0, 43)
+                        };
                         var marker = new google.maps.Marker({
                             position: pt,
                             map: map,
-                            title: val.title
+                            title: val.title,
+                            icon: image
                         });
                         marker.addListener('click', function() {
+                            $.each(infos, function(key, val) {
+                                val.close();
+                            });
                             infoWindow.open(map, marker);
+                        });
+                        points.push(marker);
+                        infos.push(infoWindow);
+                        bounds.extend(pt);
+                        map.fitBounds(bounds);
+                    });
+                    google.maps.event.addListener(map, "click", function(event) {
+                        $.each(infos, function(key, val) {
+                            val.close();
                         });
                     });
                 },
@@ -213,8 +276,16 @@
 </script>
 </head>
 <body>
-    <div id="header"></div>
+    <div id="header">
+        <img id="mainlogo" alt="Brixton Design Trail logo" src="images/bdt-logo-220.png">
+        <p>19th – 27th September 2015 <a href="https://twitter.com/BrixtonDT" title="Twitter handle" target="_blank">@BrixtonDT</a> <a href="https://twitter.com/search?q=%23BrixtonDT" title="Twitter hashtag" target="_blank">#BrixtonDT</a> <a href="https://twitter.com/search?q=%23LDF15" title="Twitter hashtag" target="_blank">#LDF15</a></p>
+    </div>
     <div id="map"></div>
-    <div id="footer"></div>
+    <div id="footer">
+        <img id="ldflogo" alt="London Design Festival logo" src="images/ldf-logo.jpg">
+        <img id="lambethlogo" alt="Lambeth logo" src="images/lambeth-logo.jpg">
+        <img id="heritagelogo" alt="National Lottery Heritage Fund logo" src="images/heritage-logo.jpg">
+        <img id="brixtonbidlogo" alt="Brixton BID logo" src="images/brixton-bid-logo.png">
+    </div>
 </body>
 </html>
