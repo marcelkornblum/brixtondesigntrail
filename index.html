@@ -18,13 +18,13 @@
         #header{
             position: fixed;
             top: 0;
-            height: 50px;
+            height: 100px;
             width: 100%;
             background-color: #000;
             z-index: 1;
         }
         #header img {
-            max-height: 40px;
+            max-height: 90px;
             margin: 5px 0 0 5px;
         }
         #header p {
@@ -46,11 +46,18 @@
         .marker h1 {
             font-size: 1.6em;
         }
-        .marker p, .marker a {
+        .marker p {
             color: #000000;
         }
+        .marker a {
+            color: #E73630;
+            text-decoration: underline;
+        }
+        .marker a:hover {
+            text-decoration: none;
+        }
         .marker img {
-            max-height: 200px;
+            max-height: 300px;
             max-width: 100%;
         }
         #footer{
@@ -60,6 +67,11 @@
             height: 50px;
             width: 100%;
             z-index: 1;
+        }
+        #footer p {
+            font-size: 0.8em;
+            color: #000;
+            display: inline-block
         }
         #footer img {
             max-height: 40px;
@@ -74,11 +86,14 @@
                 max-height: 90px;
             }
             #header p {
-                font-size: 1.1em;
-                margin-left: 110px;
+                font-size: 0.9em;
+                margin-left: 190px;
             }
             #map{
                 margin-top: 100px;
+            }
+            .marker img {
+                max-height: 200px;
             }
         }
     </style>
@@ -94,8 +109,9 @@
             var sourceSheetID = ''
         }
         var map = null;
-        var points = [];
-        var infos = []
+        var markers = [];
+        var infos = [];
+        var bounds = new google.maps.LatLngBounds();
 
         function initialize() {
             var mapCanvas = document.getElementById('map');
@@ -106,7 +122,7 @@
                 disableDefaultUI: true
             }
             map = new google.maps.Map(mapCanvas, mapOptions);
-            setStyles()
+            setStyles();
             loadPoints();
         }
         function setStyles() {
@@ -115,7 +131,6 @@
                     featureType: 'road',
                     elementType: 'labels.text.stroke',
                     stylers: [
-                        // { visibility: 'simplified' },
                         { color: '#ffffff' },
                         { weight: 6 }
                     ]
@@ -124,7 +139,6 @@
                     featureType: 'road',
                     elementType: 'labels.text.fill',
                     stylers: [
-                        // { visibility: 'simplified' },
                         { color: '#000000' },
                         { weight: 0.1 }
                     ]
@@ -192,17 +206,32 @@
                 },
                 {
                     featureType: 'poi',
-                    elementType: 'all',
+                    elementType: 'geometry',
                     stylers: [
                         { visibility: 'off' }
                     ]
-                }
+                },
+                {
+                    featureType: 'poi',
+                    elementType: 'labels.text.stroke',
+                    stylers: [
+                        { color: '#ffffff' },
+                        { weight: 6 }
+                    ]
+                },
+                {
+                    featureType: 'poi',
+                    elementType: 'labels.text.fill',
+                    stylers: [
+                        { color: '#28AF8B' },
+                        { weight: 0.1 }
+                    ]
+                },
             ]);
         }
         function loadPoints() {
             var fullURL = dataScriptURL + '?sn=Sheet1&dr=points&s=' + sourceSheetID;
-            var infoWinHeight = $('#map').height() - 100;
-            var infoWinWidth = $('#map').width() - 50;
+            var infoWinWidth = 400;
             $.ajax({
                 type: 'GET',
                 url: fullURL,
@@ -211,14 +240,18 @@
                 contentType: "application/json",
                 dataType: 'jsonp',
                 success: function(json) {
-                    var bounds = new google.maps.LatLngBounds();
                     $.each(json.data, function(key, val) {
-                        var contentImage, contentDesc, contentUrl, contentAddress = '';
-                        if (val.imgUrl != "") {
-                            contentImage = '<img src="' + val.imgUrl + '">';
-                        }
+                        var contentImage =
+                            contentDesc =
+                            contentUrl =
+                            contentInfo =
+                            contentOpening =
+                            contentAddress = '';
                         if (val.description != "") {
                             contentDesc = '<p>' + val.description + '</p>'
+                        }
+                        if (val.imgUrl != "") {
+                            contentImage = '<img src="' + val.imgUrl + '">';
                         }
                         if (val.url != "") {
                             contentUrl = '<p><a href="' + val.url + '" target="_blank">' + val.url + '</a></p>'
@@ -226,17 +259,26 @@
                         if (val.address != "") {
                             contentAddress = '<p>' + val.address + '</p>'
                         }
-                        var content = '<div class="marker" style="max-height: ' + infoWinHeight + 'px;max-width: ' + infoWinWidth + 'px;">'+
+                        if (val.opening != "") {
+                            contentOpening = '<p>' + val.opening + '</p>'
+                        }
+                        if (val.info != "") {
+                            contentInfo = '<p>' + val.info + '</p>'
+                        }
+                        var content = '<div class="marker">'+
                             '<h1>' + val.title + '</h1>'+
                             '<div class="bodyContent">'+
                             contentDesc+
                             contentImage+
+                            contentOpening+
+                            contentInfo+
                             contentUrl+
                             contentAddress+
                             '</div></div>';
                         var pt = new google.maps.LatLng(val.lat, val.lng);
                         var infoWindow = new google.maps.InfoWindow({
-                            content: content
+                            content: content,
+                            maxWidth: infoWinWidth
                         });
                         var image ={
                             url: 'images/marker.png',
@@ -251,26 +293,58 @@
                             icon: image
                         });
                         marker.addListener('click', function() {
-                            $.each(infos, function(key, val) {
-                                val.close();
-                            });
+                            closeInfoWindows();
                             infoWindow.open(map, marker);
                         });
-                        points.push(marker);
+                        // marker.addListener('mouseover', function() {
+                        //     marker.setAnimation(google.maps.Animation.BOUNCE);
+                        // });
+                        // marker.addListener('mouseout', function() {
+                        //     marker.setAnimation(null);
+                        // });
+                        infoWindow.addListener('closeclick', function() {
+                            map.fitBounds(bounds);
+                        })
+                        markers.push(marker);
                         infos.push(infoWindow);
                         bounds.extend(pt);
-                        map.fitBounds(bounds);
                     });
                     google.maps.event.addListener(map, "click", function(event) {
-                        $.each(infos, function(key, val) {
-                            val.close();
-                        });
+                        closeInfoWindows();
                     });
+                    map.fitBounds(bounds);
+                    showIntro();
                 },
                 error: function(e) {
                    console.log(e.message);
                 }
             });
+        }
+        function showIntro() {
+            var content = '<div class="marker">'+
+                '<h1>Brixton Design Trail</h1>'+
+                '<div class="bodyContent">'+
+                '<p>Following the success of Brixton Design Week in 2014, local artists, designers and creative businesses are back with <strong>Brixton Design Trail</strong> from 19-27 September 2015, as part of the London Design Festival.</p>
+                <p>The Design Trail showcases the wealth of home-grown design talent Brixton has to offer and highlights its potential to develop social, cultural and economic capital within the immediate community and beyond.</p>
+                <p>A series of free events and installations will be held in key locations including Brixton Village Market, Pop Brixton, Reliance Arcade, Brixton East 1871 and the Black Cultural Archives.</p>
+                <p>Highlights include the launch of a bespoke print by Eley Kishimoto which will pattern key locations on the trail, a supersized outdoor Street Gallery at the former Bon Marche department store, a bespoke pleasure garden inspired by the Black Cultural Archives’ Black Georgians exhibition, a site specific audio storytelling experience in Reliance Arcade, Caribbean heritage and vintage fashion, product and interior launches, talks and tours by local artists and an arty car boot sale.</p>
+                <p>Explore the website to uncover why Brixton is a creative powerhouse.</p>
+                <p>Brixton Design Trail is supported by Lambeth Council, Heritage Lottery Fund and Brixton BID, and organised by 2MZ and Squire and Partners.  To contact BDT please email <a href="mailto:BDT@squireandpartners.com">BDT@squireandpartners.com</a>.</p>'
+                '</div></div>';
+                var infoWindow = new google.maps.InfoWindow({
+                    content: content,
+                    position: map.getCenter()
+                });
+                infos.push(infoWindow);
+                // console.log(map, map.center);
+                infoWindow.open(map);
+                // setTimeout(function() {infowindow.close();}, 10);
+        }
+        function closeInfoWindows() {
+            $.each(infos, function(key, val) {
+                val.close();
+            });
+            map.fitBounds(bounds);
         }
         google.maps.event.addDomListener(window, 'load', initialize);
 </script>
@@ -278,14 +352,18 @@
 <body>
     <div id="header">
         <img id="mainlogo" alt="Brixton Design Trail logo" src="images/bdt-logo-220.png">
-        <p>19th – 27th September 2015 <a href="https://twitter.com/BrixtonDT" title="Twitter handle" target="_blank">@BrixtonDT</a> <a href="https://twitter.com/search?q=%23BrixtonDT" title="Twitter hashtag" target="_blank">#BrixtonDT</a> <a href="https://twitter.com/search?q=%23LDF15" title="Twitter hashtag" target="_blank">#LDF15</a></p>
+        <img id="ldflogo" alt="London Design Festival logo" src="images/ldf-logo.jpg">
+        <p>19&ndash;27 September 2015 <a href="https://twitter.com/BrixtonDT" title="Twitter handle" target="_blank">@BrixtonDT</a> <a href="https://twitter.com/search?q=%23BrixtonDT" title="Twitter hashtag" target="_blank">#BrixtonDT</a> <a href="https://twitter.com/search?q=%23LDF15" title="Twitter hashtag" target="_blank">#LDF15</a></p>
     </div>
     <div id="map"></div>
     <div id="footer">
-        <img id="ldflogo" alt="London Design Festival logo" src="images/ldf-logo.jpg">
+        <p>Supported By</p>
         <img id="lambethlogo" alt="Lambeth logo" src="images/lambeth-logo.jpg">
         <img id="heritagelogo" alt="National Lottery Heritage Fund logo" src="images/heritage-logo.jpg">
-        <img id="brixtonbidlogo" alt="Brixton BID logo" src="images/brixton-bid-logo.png">
+        <a href="http://www.brixtonbid.co.uk/" target="_blank"><img id="brixtonbidlogo" alt="Brixton BID logo" src="images/brixton-bid-logo.png"></a>
+        <p>Organised By</p>
+        <img id="2mzlogo" alt="2MZ logo" src="images/2MZ-logo.png">
+        <img id="squirelogo" alt="Squire &amp; Partners logo" src="images/squire-logo.png">
     </div>
 </body>
 </html>
