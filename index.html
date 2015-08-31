@@ -2,10 +2,27 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Following the success of Brixton Design Week in 2014, local artists, designers and creative businesses are back with <strong>Brixton Design Trail</strong> from 19-27 September 2015, as part of the London Design Festival.">
+    <!--
+            .     .       .  .            .
+     _. _  _| _   |_   .  |\/| _.._. _. _ |
+    (_.(_)(_](/,  [_)\_|  |  |(_][  (_.(/,|
+                     ._|
+    http://marcelkornblum.com/portfolio
+    -->
     <style>
+        /*
+        -+- Brand Colours -+-
+        Orange - EB802C
+        Turquoise - 28AF8B
+        Red - E73630
+        Blue - 28ABE3
+        Yellow - FFDD16
+        Black - 000000
+        */
         html, body {height: 100%; margin:0px !important;}
         p, a {
-            color: #000;
+            color: #fff;
             font-family: sans-serif;
         }
         a {
@@ -20,7 +37,7 @@
             top: 0;
             height: 100px;
             width: 100%;
-            background-color: #FFDD16;
+            background-color: #28AF8B;
             z-index: 1;
         }
         #header img {
@@ -32,7 +49,10 @@
             top: 0;
             right: 20px;
             font-size: 0.9em;
+            text-align: right;
         }
+        .mobonly-p { display: none; }
+        .mobnot-p { display: inline; }
         #mainlogo {
             cursor: pointer;
         }
@@ -48,7 +68,7 @@
         }
         .marker h1 {
             font-size: 1.6em;
-            color: #28AF8B;
+            color: #EB802C;
         }
         .marker p {
             color: #000000;
@@ -65,7 +85,7 @@
             max-width: 100%;
         }
         #footer{
-            background-color: #FFDD16;
+            background-color: #FFFFFF;
             position: fixed;
             bottom: 0;
             height: 50px;
@@ -84,6 +104,7 @@
             max-height: 40px;
             margin: 5px 0 0 5px;
         }
+
         @media (max-width:600px) {
           /* Phone */
             #header{
@@ -93,14 +114,20 @@
                 max-height: 90px;
             }
             #header p {
-                font-size: 0.9em;
+                font-size: 0.8em;
                 margin-left: 190px;
             }
+            .mobonly-p { display: inline; }
+            .mobnot-p { display: none; }
             #map{
                 margin-top: 100px;
+                margin-bottom: 0;
             }
             .marker img {
                 max-height: 200px;
+            }
+            #footer {
+                display: none;
             }
         }
     </style>
@@ -113,7 +140,7 @@
             var sourceSheetID = '1_fFwffawJJ4Kz2cPlY9sZe8gHVTU8N97lRz6ylZy7gk'
         } else {
             // live source spreadsheet
-            var sourceSheetID = ''
+            var sourceSheetID = '1g587TmDY3cDbhwL-pqskSC4wMt5xoOSw9T14ipzwqXU'
         }
         var map = null;
         var markers = [];
@@ -230,7 +257,7 @@
                     featureType: 'poi',
                     elementType: 'labels.text.fill',
                     stylers: [
-                        { color: '#28AF8B' },
+                        { color: '#28ABE3' },
                         { weight: 0.1 }
                     ]
                 },
@@ -322,15 +349,16 @@
         }
         function showIntro() {
             var content = '<div class="marker">'+
-                '<h1>Brixton Design Trail</h1>'+
+                // '<h1>Brixton Design Trail</h1>'+
                 '<div class="bodyContent">'+
-                '<img src="images/bdt-logo.png">'+
+                '<img src="images/bdt-logo.png" style="max-width:120px; float:right; margin: 0 0px 10px 10px;">'+
                 '<p>Following the success of Brixton Design Week in 2014, local artists, designers and creative businesses are back with <strong>Brixton Design Trail</strong> from 19-27 September 2015, as part of the London Design Festival.</p>'+
                 '<p>The Design Trail showcases the wealth of home-grown design talent Brixton has to offer and highlights its potential to develop social, cultural and economic capital within the immediate community and beyond.</p>'+
                 '<p>A series of free events and installations will be held in key locations including Brixton Village Market, Pop Brixton, Reliance Arcade, Brixton East 1871 and the Black Cultural Archives.</p>'+
-                '<p>Highlights include the launch of a bespoke print by Eley Kishimoto which will pattern key locations on the trail, a supersized outdoor Street Gallery at the former Bon Marche department store, a bespoke pleasure garden inspired by the Black Cultural Archives’ Black Georgians exhibition, a site specific audio storytelling experience in Reliance Arcade, Caribbean heritage and vintage fashion, product and interior launches, talks and tours by local artists and an arty car boot sale.</p>'+
+                '<p>Highlights include the launch of a bespoke print by Eley Kishimoto which will pattern key locations on the trail, a supersized outdoor Street Gallery at the former Bon Marche department store, a bespoke pleasure garden inspired by the Black Cultural Archives\' Black Georgians exhibition, a site specific audio storytelling experience in Reliance Arcade, Caribbean heritage and vintage fashion, product and interior launches, talks and tours by local artists and an arty car boot sale.</p>'+
                 '<p>Explore the website to uncover why Brixton is a creative powerhouse.</p>'+
-                '<p>Brixton Design Trail is supported by Lambeth Council, Heritage Lottery Fund and Brixton BID, and organised by 2MZ and Squire and Partners.  To contact BDT please email <a href="mailto:BDT@squireandpartners.com">BDT@squireandpartners.com</a>.</p>'
+                '<p>Brixton Design Trail is supported by Lambeth Council, Heritage Lottery Fund and Brixton BID, and organised by 2MZ and Squire and Partners.  To contact BDT please email <a href="mailto:BDT@squireandpartners.com">BDT@squireandpartners.com</a>.</p>'+
+                '<p><a href="#" style="float:right" onclick="closeInfoWindows(); return false;">Continue &raquo;</a></p>'+
                 '</div></div>';
                 var infoWindow = new google.maps.InfoWindow({
                     content: content,
@@ -339,7 +367,7 @@
                 });
                 infoWindow.addListener('closeclick', function() {
                     map.fitBounds(bounds);
-                })
+                });
                 $('#mainlogo').click(function() {
                     infoWindow.open(map);
                 });
@@ -359,7 +387,10 @@
     <div id="header">
         <img id="mainlogo" alt="Brixton Design Trail logo" src="images/bdt-logo.png">
         <a href="http://www.londondesignfestival.com/" target="_blank"><img id="ldflogo" alt="London Design Festival logo" src="images/ldf-logo.png"></a>
-        <p>19&ndash;27 September 2015 <a href="https://twitter.com/BrixtonDT" title="Twitter handle" target="_blank">@BrixtonDT</a> <a href="https://twitter.com/search?q=%23BrixtonDT" title="Twitter hashtag" target="_blank">#BrixtonDT</a> <a href="https://twitter.com/search?q=%23LDF15" title="Twitter hashtag" target="_blank">#LDF15</a></p>
+        <p class="mobnot-p">19&ndash;27 September 2015 <a href="https://twitter.com/BrixtonDT" title="Twitter handle" target="_blank">@BrixtonDT</a> <a href="https://twitter.com/search?q=%23BrixtonDT" title="Twitter hashtag" target="_blank">#BrixtonDT</a> <a href="https://twitter.com/search?q=%23LDF15" title="Twitter hashtag" target="_blank">#LDF15</a></p>
+        <p class="mobonly-p">
+            19&ndash;27 Sept 2015<br>
+            <a href="https://twitter.com/BrixtonDT" title="Twitter handle" target="_blank">@BrixtonDT</a> <a href="https://twitter.com/search?q=%23BrixtonDT" title="Twitter hashtag" target="_blank">#BrixtonDT</a> <a href="https://twitter.com/search?q=%23LDF15" title="Twitter hashtag" target="_blank">#LDF15</a></p>
     </div>
     <div id="map"></div>
     <div id="footer">
