@@ -58,11 +58,11 @@
             cursor: pointer;
         }
         #map{
-            margin-top: 100px;
-            margin-bottom: 50px;
+            /*margin-top: 100px;
+            margin-bottom: 50px;*/
             background-color:#fff;
             position: fixed;
-            top:0px;
+            top:100px;
             bottom:0px;
             width:100%;
             height: 100%;
@@ -119,10 +119,12 @@
             }
             .mobonly-p { display: inline; }
             .mobnot-p { display: none; }
+            /*
             #map{
                 margin-top: 100px;
                 margin-bottom: 0;
             }
+            */
             #footer {
                 display: none;
             }
@@ -145,8 +147,15 @@
         var images = [];
         var bounds = new google.maps.LatLngBounds();
         var imgId = 0;
+        var resizeTimer;
+
+        $(window).resize(function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(resizeMap, 100);
+        });
 
         function initialize() {
+            resizeMap();
             var mapCanvas = document.getElementById('map');
             var mapOptions = {
                 center: new google.maps.LatLng(51.4604107,-0.1166048),
@@ -157,6 +166,9 @@
             map = new google.maps.Map(mapCanvas, mapOptions);
             setStyles();
             loadPoints();
+        }
+        function resizeMap() {
+            $('#map').height($(window).height() - 150);
         }
         function setStyles() {
             map.set('styles', [
@@ -297,8 +309,7 @@
                         if (val.info != "") {
                             contentInfo = '<p>' + val.info + '</p>'
                         }
-                        var content = '<div class="marker">'+
-                            '<h1>' + val.title + '</h1>'+
+                        var content = '<h1>' + val.title + '</h1>'+
                             '<div class="bodyContent">'+
                             contentDesc+
                             contentImage+
@@ -306,12 +317,19 @@
                             contentInfo+
                             contentAddress+
                             contentUrl+
-                            '</div></div>';
+                            '</div>';
+
+                        var wrapper = document.createElement("div");
+                        wrapper.innerHTML = content;
+                        wrapper.className = "marker";
+                        // $('#extras').append(wrapper);
+
                         var pt = new google.maps.LatLng(val.lat, val.lng);
                         var infoWindow = new google.maps.InfoWindow({
-                            content: content,
+                            content: wrapper,
                             maxWidth: 400
                         });
+                        // infoWindow.setContent(infoWindow.getContent());
                         var image ={
                             url: 'images/marker.png',
                             size: new google.maps.Size(18, 34),
@@ -335,16 +353,7 @@
                         infos.push(infoWindow);
                         bounds.extend(pt);
                     });
-                    // $.each(images, function(key, val) {
-                    //     $('#_' + val.imgId).append(val);
-                    //     console.log($('#_' + val.imgId), val);
-                    // // });
-                    // $.each(infos, function(key, val) {
-                    //     var origCont = $.parseHTML(val.getContent());
-                    //     var placeholder = $(origCont).find('#_8')
-                    //     // placeholder.append('plop');
-                    //     console.log(val.getContent(), origCont, val, typeof(origCont));
-                    // });
+                    // $('#extras').css('display', 'none');
                     google.maps.event.addListener(map, "click", function(event) {
                         closeInfoWindows();
                     });
@@ -411,11 +420,18 @@
                 // insert into infoWindow - this is complex because the dom gets amended by google maps
                 // each time they appear and disappear
                 $.each(infos, function(key, val) {
-                    var origCont = $.parseHTML(val.getContent());
+                    var origCont = val.getContent();
                     var placeholder = $(origCont).find('#_' + imgElement.imgId);
                     if (placeholder.length > 0) {
                         placeholder.append(imgElement);
-                        val.setContent(origCont[0].outerHTML);
+                        // crazy workaround to fix height for iPhone - add to DOM, measure, remove
+                        $('#extras').css('display', 'block');
+                        $('#extras').append(origCont);
+                        var copyCont = $('#extras').find('.marker');
+                        $(origCont).height($(copyCont).height() + 40);
+                        $(copyCont).remove();
+                        $('#extras').css('display', 'none');
+                        val.setContent(origCont.outerHTML);
                     }
                 });
             }
@@ -424,6 +440,7 @@
             return '<span id="_' + imgId + '"></span>'
         }
         google.maps.event.addDomListener(window, 'load', initialize);
+        window.console && console.log('%cCoded by Marcel', 'background: #222; color: #bada55', 'http://www.marcelkornblum.com/portfolio');
 </script>
 </head>
 <body>
@@ -445,5 +462,6 @@
         <a href="http://www.2mz.co.uk/" target="_blank"><img id="2mzlogo" alt="2MZ logo" src="images/2MZ-logo.png"></a>
         <a href="http://squireandpartners.com/" target="_blank"><img id="squirelogo" alt="Squire &amp; Partners logo" src="images/squire-logo.png"></a>
     </div>
+    <div id="extras"></div>
 </body>
 </html>
