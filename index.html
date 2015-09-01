@@ -4,6 +4,8 @@
     <title>BDT</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Following the success of Brixton Design Week in 2014, local artists, designers and creative businesses are back with <strong>Brixton Design Trail</strong> from 19-27 September 2015, as part of the London Design Festival.">
+    <meta name="theme-color" content="#28AF8B">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <!--
             .     .       .  .            .
      _. _  _| _   |_   .  |\/| _.._. _. _ |
@@ -21,6 +23,7 @@
         Yellow - FFDD16
         Black - 000000
         */
+        /*.gm-style-iw div {overflow:visible !important;}*/
         html, body {height: 100%; margin:0px !important;}
         p, a {
             color: #fff;
@@ -67,6 +70,12 @@
             width:100%;
             height: 100%;
         }
+        .marker {
+            overflow: hidden;
+            word-wrap: break-word;
+            /*white-space: nowrap;*/
+            line-height: normal;
+        }
         .marker h1 {
             font-size: 1.6em;
             color: #EB802C;
@@ -83,6 +92,7 @@
         }
         .marker img {
             max-width: 100%;
+            height: auto;
         }
         #footer{
             background-color: #FFFFFF;
@@ -103,6 +113,10 @@
         #footer img {
             max-height: 40px;
             margin: 5px 0 0 5px;
+        }
+        #extras {
+            display: none;
+            font-size: 13px;
         }
 
         @media (max-width:600px) {
@@ -144,7 +158,6 @@
         var map = null;
         var markers = [];
         var infos = [];
-        var images = [];
         var bounds = new google.maps.LatLngBounds();
         var imgId = 0;
         var resizeTimer;
@@ -168,7 +181,11 @@
             loadPoints();
         }
         function resizeMap() {
-            $('#map').height($(window).height() - 150);
+            var headerfooterheight = 150;
+            if ($('#footer').css('display') == 'none') { // on mobile we're not showing the footer
+                headerfooterheight = 100;
+            }
+            $('#map').height($(window).height() - headerfooterheight);
         }
         function setStyles() {
             map.set('styles', [
@@ -310,26 +327,22 @@
                             contentInfo = '<p>' + val.info + '</p>'
                         }
                         var content = '<h1>' + val.title + '</h1>'+
-                            '<div class="bodyContent">'+
                             contentDesc+
                             contentImage+
                             contentOpening+
                             contentInfo+
                             contentAddress+
-                            contentUrl+
-                            '</div>';
+                            contentUrl;
 
                         var wrapper = document.createElement("div");
                         wrapper.innerHTML = content;
                         wrapper.className = "marker";
-                        // $('#extras').append(wrapper);
 
                         var pt = new google.maps.LatLng(val.lat, val.lng);
                         var infoWindow = new google.maps.InfoWindow({
                             content: wrapper,
-                            maxWidth: 400
+                            maxWidth: Math.min($(window).width() * 0.7, 400)
                         });
-                        // infoWindow.setContent(infoWindow.getContent());
                         var image ={
                             url: 'images/marker.png',
                             size: new google.maps.Size(18, 34),
@@ -353,7 +366,6 @@
                         infos.push(infoWindow);
                         bounds.extend(pt);
                     });
-                    // $('#extras').css('display', 'none');
                     google.maps.event.addListener(map, "click", function(event) {
                         closeInfoWindows();
                     });
@@ -366,22 +378,21 @@
             });
         }
         function showIntro() {
-            var content = '<div class="marker">'+
-                // '<h1>Brixton Design Trail</h1>'+
-                '<div class="bodyContent">'+
-                '<img src="images/bdt-logo.png" style="max-width:120px; float:right; margin: 0 0px 10px 10px;">'+
+            var content = '<img src="images/bdt-logo.png" style="max-width:120px; float:right; margin: 13px 0px 10px 10px;">'+
                 '<p>Following the success of Brixton Design Week in 2014, local artists, designers and creative businesses are back with <strong>Brixton Design Trail</strong> from 19-27 September 2015, as part of the London Design Festival.</p>'+
                 '<p>The Design Trail showcases the wealth of home-grown design talent Brixton has to offer and highlights its potential to develop social, cultural and economic capital within the immediate community and beyond.</p>'+
                 '<p>A series of free events and installations will be held in key locations including Brixton Village Market, Pop Brixton, Reliance Arcade, Brixton East 1871 and the Black Cultural Archives.</p>'+
                 '<p>Highlights include the launch of a bespoke print by Eley Kishimoto which will pattern key locations on the trail, a supersized outdoor Street Gallery at the former Bon Marche department store, a bespoke pleasure garden inspired by the Black Cultural Archives\' Black Georgians exhibition, a site specific audio storytelling experience in Reliance Arcade, Caribbean heritage and vintage fashion, product and interior launches, talks and tours by local artists and an arty car boot sale.</p>'+
                 '<p>Explore the website to uncover why Brixton is a creative powerhouse.</p>'+
                 '<p>Brixton Design Trail is supported by Lambeth Council, Heritage Lottery Fund and Brixton BID, and organised by 2MZ and Squire and Partners.  To contact BDT please email <a href="mailto:BDT@squireandpartners.com">BDT@squireandpartners.com</a>.</p>'+
-                '<p><a href="#" style="float:right" onclick="closeInfoWindows(); return false;">Close &times;</a></p>'+
-                '</div></div>';
+                '<p><a href="#" style="float:right" onclick="closeInfoWindows(); return false;">Close &times;</a></p>';
+                var wrapper = document.createElement("div");
+                wrapper.innerHTML = content;
+                wrapper.className = "marker";
                 var infoWindow = new google.maps.InfoWindow({
-                    content: content,
+                    content: wrapper,
                     position: map.getCenter(),
-                    maxWidth: 400
+                    maxWidth: getIWWidth()
                 });
                 infoWindow.addListener('closeclick', function() {
                     map.fitBounds(bounds);
@@ -398,17 +409,20 @@
             });
             map.fitBounds(bounds);
         }
+        function getIWWidth() {
+            return Math.min($(window).width() * 0.7, 400)
+        }
         function getResizedImg(imgSrc) {
             var imgElement = new Image();
             imgId += 1;
             imgElement.imgId = imgId
             imgElement.onload = function() {
-                if (this.width > 400) {
-                    var ratio = 400 / this.width;
+                if (this.width > getIWWidth()) {
+                    var ratio = getIWWidth() / this.width;
                 }
                 else {
-                    if (this.height > 400) {
-                        var ratio = 400 / this.height;
+                    if (this.height > getIWWidth()) {
+                        var ratio = getIWWidth() / this.height;
                     }
                     else {
                         var ratio = 1;
@@ -423,12 +437,16 @@
                     var origCont = val.getContent();
                     var placeholder = $(origCont).find('#_' + imgElement.imgId);
                     if (placeholder.length > 0) {
+                        // this is the relevant IW for this image
                         placeholder.append(imgElement);
                         // crazy workaround to fix height for iPhone - add to DOM, measure, remove
                         $('#extras').css('display', 'block');
+                        $('#extras').width(getIWWidth());
                         $('#extras').append(origCont);
                         var copyCont = $('#extras').find('.marker');
-                        $(origCont).height($(copyCont).height() + 40);
+                        console.log(imgElement.imgId, $(copyCont).width(), $(copyCont).height());
+                        // set calculated height onto our new IW content
+                        $(origCont).height($(copyCont).height() + 20);
                         $(copyCont).remove();
                         $('#extras').css('display', 'none');
                         val.setContent(origCont.outerHTML);
@@ -436,10 +454,48 @@
                 });
             }
             imgElement.src = imgSrc;
-            images.push(imgElement);
             return '<span id="_' + imgId + '"></span>'
         }
         google.maps.event.addDomListener(window, 'load', initialize);
+
+        // from https://github.com/scottjehl/Hide-Address-Bar/blob/master/hide-address-bar.js
+        /*! Normalized address bar hiding for iOS & Android (c) @scottjehl MIT License */
+        (function( win ){
+            var doc = win.document;
+
+            // If there's a hash, or addEventListener is undefined, stop here
+            if(!win.navigator.standalone && !location.hash && win.addEventListener ){
+
+                //scroll to 1
+                win.scrollTo( 0, 1 );
+                var scrollTop = 1,
+                    getScrollTop = function(){
+                        return win.pageYOffset || doc.compatMode === "CSS1Compat" && doc.documentElement.scrollTop || doc.body.scrollTop || 0;
+                    },
+
+                    //reset to 0 on bodyready, if needed
+                    bodycheck = setInterval(function(){
+                        if( doc.body ){
+                            clearInterval( bodycheck );
+                            scrollTop = getScrollTop();
+                            win.scrollTo( 0, scrollTop === 1 ? 0 : 1 );
+                        }
+                    }, 15 );
+
+                win.addEventListener( "load", function(){
+                    setTimeout(function(){
+                        //at load, if user hasn't scrolled more than 20 or so...
+                        if( getScrollTop() < 20 ){
+                    console.log('yoohoo')
+                            //reset to hide addr bar at onload
+                            win.scrollTo( 0, scrollTop === 1 ? 0 : 1 );
+                        }
+                    }, 0);
+                }, false );
+            }
+        })( this );
+
+        // attribution
         window.console && console.log('%cCoded by Marcel', 'background: #222; color: #bada55', 'http://www.marcelkornblum.com/portfolio');
 </script>
 </head>
