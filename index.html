@@ -82,7 +82,6 @@
             text-decoration: none;
         }
         .marker img {
-            /*max-height: 300px;*/
             max-width: 100%;
         }
         #footer{
@@ -124,9 +123,6 @@
                 margin-top: 100px;
                 margin-bottom: 0;
             }
-            .marker img {
-                max-height: 200px;
-            }
             #footer {
                 display: none;
             }
@@ -146,7 +142,9 @@
         var map = null;
         var markers = [];
         var infos = [];
+        var images = [];
         var bounds = new google.maps.LatLngBounds();
+        var imgId = 0;
 
         function initialize() {
             var mapCanvas = document.getElementById('map');
@@ -285,7 +283,7 @@
                             contentDesc = '<p>' + val.description + '</p>'
                         }
                         if (val.imgUrl != "") {
-                            contentImage = '<img src="' + val.imgUrl + '">';
+                            contentImage = getResizedImg(val.imgUrl);
                         }
                         if (val.url != "") {
                             contentUrl = '<p><a href="' + val.url + '" target="_blank">' + val.url + '</a></p>'
@@ -337,6 +335,16 @@
                         infos.push(infoWindow);
                         bounds.extend(pt);
                     });
+                    // $.each(images, function(key, val) {
+                    //     $('#_' + val.imgId).append(val);
+                    //     console.log($('#_' + val.imgId), val);
+                    // // });
+                    // $.each(infos, function(key, val) {
+                    //     var origCont = $.parseHTML(val.getContent());
+                    //     var placeholder = $(origCont).find('#_8')
+                    //     // placeholder.append('plop');
+                    //     console.log(val.getContent(), origCont, val, typeof(origCont));
+                    // });
                     google.maps.event.addListener(map, "click", function(event) {
                         closeInfoWindows();
                     });
@@ -359,7 +367,7 @@
                 '<p>Highlights include the launch of a bespoke print by Eley Kishimoto which will pattern key locations on the trail, a supersized outdoor Street Gallery at the former Bon Marche department store, a bespoke pleasure garden inspired by the Black Cultural Archives\' Black Georgians exhibition, a site specific audio storytelling experience in Reliance Arcade, Caribbean heritage and vintage fashion, product and interior launches, talks and tours by local artists and an arty car boot sale.</p>'+
                 '<p>Explore the website to uncover why Brixton is a creative powerhouse.</p>'+
                 '<p>Brixton Design Trail is supported by Lambeth Council, Heritage Lottery Fund and Brixton BID, and organised by 2MZ and Squire and Partners.  To contact BDT please email <a href="mailto:BDT@squireandpartners.com">BDT@squireandpartners.com</a>.</p>'+
-                '<p><a href="#" style="float:right" onclick="closeInfoWindows(); return false;">Continue &raquo;</a></p>'+
+                '<p><a href="#" style="float:right" onclick="closeInfoWindows(); return false;">Close &times;</a></p>'+
                 '</div></div>';
                 var infoWindow = new google.maps.InfoWindow({
                     content: content,
@@ -380,6 +388,40 @@
                 val.close();
             });
             map.fitBounds(bounds);
+        }
+        function getResizedImg(imgSrc) {
+            var imgElement = new Image();
+            imgId += 1;
+            imgElement.imgId = imgId
+            imgElement.onload = function() {
+                if (this.width > 400) {
+                    var ratio = 400 / this.width;
+                }
+                else {
+                    if (this.height > 400) {
+                        var ratio = 400 / this.height;
+                    }
+                    else {
+                        var ratio = 1;
+                    }
+                }
+                this.width = this.width * ratio;
+                this.height = this.height * ratio;
+
+                // insert into infoWindow - this is complex because the dom gets amended by google maps
+                // each time they appear and disappear
+                $.each(infos, function(key, val) {
+                    var origCont = $.parseHTML(val.getContent());
+                    var placeholder = $(origCont).find('#_' + imgElement.imgId);
+                    if (placeholder.length > 0) {
+                        placeholder.append(imgElement);
+                        val.setContent(origCont[0].outerHTML);
+                    }
+                });
+            }
+            imgElement.src = imgSrc;
+            images.push(imgElement);
+            return '<span id="_' + imgId + '"></span>'
         }
         google.maps.event.addDomListener(window, 'load', initialize);
 </script>
